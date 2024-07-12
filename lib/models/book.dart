@@ -1,35 +1,51 @@
 class Book {
-  final int? id;
-  final String _imageUrl;
-  final String _title;
-  final String _publisher;
-  final String _author;
+  final int id;
+  final String imageUrl;
+  final String title;
+  final String publisher;
+  final String author;
 
-  Book(this._imageUrl, this._title, this._publisher, this._author, {this.id});
+  Book({
+    required this.id,
+    required this.imageUrl,
+    required this.title,
+    required this.publisher,
+    required this.author,
+  });
 
-  String get imageUrl => _imageUrl;
-  String get title => _title;
-  String get publisher => _publisher;
-  String get author => _author;
+  Book copyWith({
+    int? id,
+    String? imageUrl,
+    String? title,
+    String? publisher,
+    String? author,
+  }) {
+    return Book(
+      id: id ?? this.id,
+      imageUrl: imageUrl ?? this.imageUrl,
+      title: title ?? this.title,
+      publisher: publisher ?? this.publisher,
+      author: author ?? this.author,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'imageUrl': _imageUrl,
-      'title': _title,
-      'publisher': _publisher,
-      'author': _author,
+      'imageUrl': imageUrl,
+      'title': title,
+      'publisher': publisher,
+      'author': author,
     };
   }
 
   factory Book.fromMap(Map<String, dynamic> map) {
     return Book(
-      map['imageUrl'],
-      map['title'],
-      map['publisher'],
-      map['author'],
       id: map['id'],
+      imageUrl: map['imageUrl'],
+      title: map['title'],
+      publisher: map['publisher'],
+      author: map['author'],
     );
   }
 }
-

@@ -12,39 +12,6 @@ class BookDao {
     return await db.insert('books', book.toMap());
   }
 
-  Future<void> insertInitialBooks() async {
-    final initialBooks = [
-      Book(
-        'https://via.placeholder.com/100',
-        'Título do Livro 1',
-        'Editora 1',
-        'Autor 1',
-      ),
-      Book(
-        'https://via.placeholder.com/100',
-        'Título do Livro 2',
-        'Editora 2',
-        'Autor 2',
-      ),
-      Book(
-        'https://via.placeholder.com/100',
-        'Título do Livro 3',
-        'Editora 3',
-        'Autor 3',
-      ),
-    ];
-
-    final db = await _db;
-
-    // Verifique se a tabela está vazia antes de inserir livros iniciais
-    final count = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM books'));
-    if (count == 0) {
-      for (var book in initialBooks) {
-        await insertBook(book);
-      }
-    }
-  }
-
   Future<int> updateBook(Book book) async {
     final db = await _db;
     return await db.update(

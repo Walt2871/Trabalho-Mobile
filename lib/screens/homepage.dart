@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  void _fetchBooks() async {
+  Future<void> _fetchBooks() async {
     _books = await _bookDao.getBooks();
     setState(() {
       _filteredBooks = _books;
@@ -113,6 +113,7 @@ class _HomePageState extends State<HomePage> {
                 final book = _filteredBooks[index];
                 return _buildBookItem(
                   context,
+                  book.id,
                   book.imageUrl,
                   book.title,
                   book.publisher,
@@ -155,6 +156,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBookItem(
       BuildContext context,
+      int id,
       String imageUrl,
       String title,
       String publisher,
@@ -227,22 +229,33 @@ class _HomePageState extends State<HomePage> {
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditBookPage(
-                      imageUrl: imageUrl,
-                      title: title,
-                      author: author,
-                      publisher: publisher,
-                    ),
-                  ),
-                );
+                _navigateToEditPage(id, imageUrl, title, author, publisher);
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _navigateToEditPage(int id, String imageUrl, String title, String author, String publisher) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditBookPage(
+          id: id,
+          imageUrl: imageUrl,
+          title: title,
+          author: author,
+          publisher: publisher,
+          onUpdate: _fetchBooks,  // Passa a função para atualizar a lista de livros
+        ),
+      ),
+    );
+
+
+    if (result == true) {
+      _fetchBooks();  // Atualiza a lista de livros
+    }
   }
 }

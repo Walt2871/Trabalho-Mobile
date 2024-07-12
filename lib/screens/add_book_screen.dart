@@ -59,10 +59,11 @@ class _AddBookPageState extends State<AddBookPage> {
   void _addBook() async {
     if (_formKey.currentState?.validate() ?? false) {
       final newBook = Book(
-        _image != null ? _image!.path : '',
-        _titleController.text,
-        _publisherController.text,
-        _authorController.text,
+        id: 0,
+        imageUrl: _image != null ? _image!.path : '',
+        title: _titleController.text,
+        publisher: _publisherController.text,
+        author: _authorController.text,
       );
 
       // Chama a função passada como parâmetro
