@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import '../database/bookDAO.dart';
 import '../models/book.dart';
 import 'add_book_screen.dart';
 import 'edit_book_screen.dart';
@@ -13,34 +16,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Book> _books = [
-    Book(
-      imageUrl: 'https://via.placeholder.com/100',
-      title: 'Título do Livro 1',
-      publisher: 'Editora 1',
-      author: 'Autor 1',
-    ),
-    Book(
-      imageUrl: 'https://via.placeholder.com/100',
-      title: 'Título do Livro 2',
-      publisher: 'Editora 2',
-      author: 'Autor 2',
-    ),
-    Book(
-      imageUrl: 'https://via.placeholder.com/100',
-      title: 'Título do Livro 3',
-      publisher: 'Editora 3',
-      author: 'Autor 3',
-    ),
-  ];
-
+  final BookDao _bookDao = BookDao();
+  List<Book> _books = [];
   List<Book> _filteredBooks = [];
   final TextEditingController _searchController = TextEditingController();
+  int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _filteredBooks = _books;
+    _fetchBooks();
     _searchController.addListener(_filterBooks);
   }
 
@@ -49,6 +34,13 @@ class _HomePageState extends State<HomePage> {
     _searchController.removeListener(_filterBooks);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _fetchBooks() async {
+    _books = await _bookDao.getBooks();
+    setState(() {
+      _filteredBooks = _books;
+    });
   }
 
   void _filterBooks() {
@@ -60,27 +52,22 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _addBook(Book book) {
-    setState(() {
-      _books.add(book);
-    });
+  void _addBook(Book book) async {
+    await _bookDao.insertBook(book);
+    _fetchBooks();
   }
 
-  int _selectedIndex = 0;
-
   void _onItemTapped(int index) {
-    if (_selectedIndex == index) return; // Evitar recarregar a página atual
+    if (_selectedIndex == index) return;
 
     setState(() {
       _selectedIndex = index;
       if (index == 0) {
-        // Navegar para a HomePage
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
       } else if (index == 1) {
-        // Navegar para a SecondPage
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoanPage()),
@@ -93,55 +80,51 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Acervo de Livros',
-            style: TextStyle(color: Colors.white, fontSize: 32.0)
+        title: const Text(
+          'Acervo de Livros',
+          style: TextStyle(color: Colors.white, fontSize: 32.0),
         ),
         backgroundColor: Colors.blue[900],
         centerTitle: true,
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar',
-                    fillColor: Colors.white,
-                    filled: true,
-                    prefixIcon: Icon(Icons.search, color: Colors.blue[900]),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 16.0),
-                  ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar',
+                fillColor: Colors.white,
+                filled: true,
+                prefixIcon: Icon(Icons.search, color: Colors.blue[900]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 16.0),
               ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _filteredBooks.length,
-                  itemBuilder: (context, index) {
-                    final book = _filteredBooks[index];
-                    return _buildBookItem(
-                      context,
-                      book.imageUrl,
-                      book.title,
-                      book.publisher,
-                      book.author,
-                    );
-                  },
-                ),
-              ),
-            ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _filteredBooks.length,
+              itemBuilder: (context, index) {
+                final book = _filteredBooks[index];
+                return _buildBookItem(
+                  context,
+                  book.imageUrl,
+                  book.title,
+                  book.publisher,
+                  book.author,
+                );
+              },
+            ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: (){
-          // Navegar para a página de adição de livro
+        onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -183,11 +166,32 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
-            Image.network(
+            // Verifica se a URL da imagem é local ou de ativo
+            imageUrl.startsWith('assets/')
+                ? Image.asset(
               imageUrl,
               width: 100,
               height: 150,
               fit: BoxFit.cover,
+            )
+                : imageUrl.startsWith('/data')
+                ? Image.file(
+              File(imageUrl),
+              width: 100,
+              height: 150,
+              fit: BoxFit.cover,
+            )
+                : Container(
+              width: 100,
+              height: 150,
+              color: Colors.grey[300], // Placeholder se o URL for inválido
+              child: const Center(
+                child: Text(
+                  'Imagem não disponível',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54),
+                ),
+              ),
             ),
             const SizedBox(width: 16.0),
             Expanded(
@@ -223,7 +227,6 @@ class _HomePageState extends State<HomePage> {
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
-                // Navegação para a página de edição
                 Navigator.push(
                   context,
                   MaterialPageRoute(

@@ -20,8 +20,8 @@ class _AddBookPageState extends State<AddBookPage> {
   final _publisherController = TextEditingController();
   final _authorController = TextEditingController();
 
-  Future<void> _pickImage() async {
-    final XFile? selectedImage = await _picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? selectedImage = await _picker.pickImage(source: source);
     if (selectedImage != null) {
       setState(() {
         _image = selectedImage;
@@ -29,26 +29,83 @@ class _AddBookPageState extends State<AddBookPage> {
     }
   }
 
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Escolher da Galeria'),
+            onTap: () {
+              _pickImage(ImageSource.gallery);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_camera),
+            title: const Text('Tirar Foto'),
+            onTap: () {
+              _pickImage(ImageSource.camera);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addBook() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final newBook = Book(
+        _image != null ? _image!.path : '',
+        _titleController.text,
+        _publisherController.text,
+        _authorController.text,
+      );
+
+      // Chama a função passada como parâmetro
+      widget.onAddBook(newBook);
+
+      // Navega de volta para a página inicial
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cadastrar Livro',
+        title: const Text(
+          'Cadastrar Livro',
           style: TextStyle(color: Colors.white, fontSize: 32.0),
         ),
         backgroundColor: Colors.blue[900],
         centerTitle: true,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               if (_image != null)
-                Image.file(File(_image!.path)),
+                Image.file(
+                  File(_image!.path),
+                  height: 250,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                )
+              else
+                const Icon(
+                  Icons.camera_alt,
+                  size: 100,
+                  color: Colors.grey,
+                ),
+              const SizedBox(height: 16.0),
               ElevatedButton(
-                onPressed: _pickImage,
+                onPressed: _showImagePickerOptions,
                 child: const Text('Escolher Imagem'),
               ),
               TextFormField(
@@ -83,18 +140,7 @@ class _AddBookPageState extends State<AddBookPage> {
               ),
               const SizedBox(height: 20.0),
               ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState?.validate() ?? false) {
-                    final newBook = Book(
-                      imageUrl: _image != null ? _image!.path : '',
-                      title: _titleController.text,
-                      publisher: _publisherController.text,
-                      author: _authorController.text,
-                    );
-                    widget.onAddBook(newBook);
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _addBook,
                 child: const Text('Adicionar Livro'),
               ),
             ],
@@ -106,11 +152,9 @@ class _AddBookPageState extends State<AddBookPage> {
 
   @override
   void dispose() {
-    // Dispose controllers and image file if needed
     _titleController.dispose();
     _publisherController.dispose();
     _authorController.dispose();
     super.dispose();
   }
 }
-
